@@ -19,4 +19,5 @@ The planned workflow uses Codex Cloud for development and quick CPU tests, GitHu
 - [Development ADWIN drift baseline](docs/adwin_baseline.md)
 - [Development Page-Hinkley drift baseline and ADWIN comparison](docs/page_hinkley_baseline.md)
 - [Drift detection without adaptation control](docs/drift_without_adaptation.md)
+- [Fixed-schedule adaptation control](docs/fixed_schedule_adaptation.md)
 - [Repository layout and experiment workflow](docs/execution_workflow.md)

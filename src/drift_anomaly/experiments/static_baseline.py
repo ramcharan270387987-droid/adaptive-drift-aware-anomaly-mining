@@ -298,7 +298,7 @@ def run_baseline[Config](
 ) -> dict:
     experiment = load_experiment(config_path, parse_detector)
     with staged_output(output) as staged:
-        aggregate = _evaluate(
+        aggregate = evaluate_baseline(
             experiment,
             config_path,
             staged,
@@ -310,8 +310,16 @@ def run_baseline[Config](
     return aggregate
 
 
-def _evaluate(
-    experiment, config_path, output, build_detector, *, scored_csv, plot, record_runtime
+def evaluate_baseline(
+    experiment,
+    config_path,
+    output,
+    build_detector,
+    *,
+    scored_csv=False,
+    plot=None,
+    record_runtime=False,
+    diagnose: Callable[[DevelopmentReplay], dict] | None = None,
 ):
     if plot is not None:
         prepare_plots(output)
@@ -357,6 +365,8 @@ def _evaluate(
                 group.merge(evaluation)
                 groups[key] = group, count + 1
                 row = anomaly_stream_record(run, evaluation, stream_id, variant)
+                if diagnose is not None:
+                    row["adaptation"] = diagnose(run)
                 per_stream.append(row)
                 if writer is not None:
                     _write_scored(writer, run, stream_id)

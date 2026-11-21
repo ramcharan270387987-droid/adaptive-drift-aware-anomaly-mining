@@ -1,0 +1,18 @@
+detector:
+  type: zscore_fixed_schedule
+  threshold: 3.0
+  minimum_std: 1.0e-12
+  adaptation_interval: 256
+  window_size: 256
+warmup: 256
+streams:
+  - ../synthetic/stationary_dev.yaml
+  - ../synthetic/sudden_dev.yaml
+  - ../synthetic/gradual_dev.yaml
+  - ../synthetic/incremental_dev.yaml
+  - ../synthetic/recurring_dev.yaml
+grid:
+  seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  onsets: [1024, 2048]
+  shifts: [1.5, 3.0]
+  durations: [128, 256]
