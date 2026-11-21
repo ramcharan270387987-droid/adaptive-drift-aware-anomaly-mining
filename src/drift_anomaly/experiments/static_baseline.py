@@ -19,6 +19,7 @@ from drift_anomaly.evaluation import AnomalyEvaluation
 from drift_anomaly.replay import (
     DEFAULT_WARMUP,
     DevelopmentReplay,
+    ReplayRecord,
     StreamingDetector,
     replay_synthetic_development,
     validate_development_config,
@@ -190,24 +191,64 @@ CSV_FIELDS = (
 )
 
 
+def scored_row(record: ReplayRecord, stream_id: str) -> tuple:
+    obs = record.observation
+    prediction = record.prediction
+    assert prediction is not None
+    return (
+        stream_id,
+        obs.index,
+        obs.value,
+        int(obs.anomaly_label),
+        obs.drift_phase,
+        obs.regime,
+        prediction.score,
+        int(prediction.predicted_anomaly),
+        prediction.metadata["threshold"],
+    )
+
+
 def _write_scored(writer, run: DevelopmentReplay, stream_id: str) -> None:
-    for record in run.result.scored_records():
-        obs = record.observation
-        prediction = record.prediction
-        assert prediction is not None
-        writer.writerow(
-            (
-                stream_id,
-                obs.index,
-                obs.value,
-                int(obs.anomaly_label),
-                obs.drift_phase,
-                obs.regime,
-                prediction.score,
-                int(prediction.predicted_anomaly),
-                prediction.metadata["threshold"],
-            )
-        )
+    writer.writerows(
+        scored_row(record, stream_id) for record in run.result.scored_records()
+    )
+
+
+def anomaly_stream_record(
+    run: DevelopmentReplay, evaluation: AnomalyEvaluation, stream_id: str, variant: str
+) -> dict:
+    prediction = next(run.result.scored_records()).prediction
+    assert prediction is not None
+    provenance = run.provenance
+    return {
+        "stream_id": stream_id,
+        "variant": variant,
+        "drift_type": provenance.drift_type,
+        "seed": provenance.stream_seed,
+        "stream_config_path": provenance.stream_config_path,
+        "stream_parameters": provenance.stream_parameters,
+        "threshold": prediction.metadata["threshold"],
+        "warmup": run.result.stats.warmup_count,
+        **evaluation.summary(),
+    }
+
+
+def summarize_anomaly_groups(
+    groups: dict[tuple[str, str], tuple[AnomalyEvaluation, int]],
+) -> dict:
+    overall = AnomalyEvaluation()
+    by_drift = {}
+    for (drift, variant), (evaluation, count) in groups.items():
+        by_drift.setdefault(drift, {})[variant] = {
+            "stream_count": count,
+            **evaluation.summary(),
+        }
+        overall.merge(evaluation)
+    return {
+        "stream_count": sum(count for _, count in groups.values()),
+        "by_drift": by_drift,
+        "pooled": overall.summary(),
+    }
 
 
 def write_json(path: Path, value) -> None:
@@ -307,9 +348,6 @@ def _evaluate(
                             "scored_observations_per_second": stats.scored_observations_per_second,
                         }
                     )
-                prediction = next(run.result.scored_records()).prediction
-                assert prediction is not None
-                threshold = prediction.metadata["threshold"]
                 evaluation = AnomalyEvaluation()
                 evaluation.add(run.result.scored_records(), run.drift_events)
                 key = (config.drift_type, variant)
@@ -318,42 +356,19 @@ def _evaluate(
                 group, count = groups[key]
                 group.merge(evaluation)
                 groups[key] = group, count + 1
-                per_stream.append(
-                    {
-                        "stream_id": stream_id,
-                        "variant": variant,
-                        "drift_type": config.drift_type,
-                        "seed": config.seed,
-                        "stream_config_path": str(path),
-                        "stream_parameters": asdict(config),
-                        "threshold": threshold,
-                        "warmup": run.result.stats.warmup_count,
-                        **evaluation.summary(),
-                    }
-                )
+                row = anomaly_stream_record(run, evaluation, stream_id, variant)
+                per_stream.append(row)
                 if writer is not None:
                     _write_scored(writer, run, stream_id)
                 if plot is not None and variant == "injected" and scenario == template:
                     plot(
                         run,
                         output / "plots" / f"{config.drift_type}.png",
-                        threshold,
+                        row["threshold"],
                     )
 
     assert first is not None
-    overall = AnomalyEvaluation()
-    by_drift = {}
-    for (drift, variant), (evaluation, count) in groups.items():
-        by_drift.setdefault(drift, {})[variant] = {
-            "stream_count": count,
-            **evaluation.summary(),
-        }
-        overall.merge(evaluation)
-    aggregate = {
-        "stream_count": len(per_stream),
-        "by_drift": by_drift,
-        "pooled": overall.summary(),
-    }
+    aggregate = summarize_anomaly_groups(groups)
     write_json(
         output / "manifest.json",
         {

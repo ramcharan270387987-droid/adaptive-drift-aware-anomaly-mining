@@ -26,7 +26,7 @@ from drift_anomaly.replay import (
 )
 
 
-def _pair_record(
+def pair_record(
     pair_id: str, drift_type: str, clean: DriftEvaluation, injected: DriftEvaluation
 ) -> dict:
     clean_false = set(clean.false_alarm_indices)
@@ -50,6 +50,63 @@ def _paired_summary(pairs: list[dict]) -> dict:
         "pairs_with_fewer_false_alarms": sum(diff < 0 for diff in differences),
         "pairs_with_equal_false_alarms": differences.count(0),
         "net_additional_false_alarms": sum(differences),
+    }
+
+
+def drift_stream_record(
+    run: DevelopmentReplay,
+    evaluation: DriftEvaluation,
+    stream_id: str,
+    pair_id: str,
+    variant: str,
+) -> dict:
+    return {
+        "stream_id": stream_id,
+        "pair_id": pair_id,
+        "variant": variant,
+        "drift_type": run.provenance.drift_type,
+        "seed": run.provenance.stream_seed,
+        "stream_config_path": run.provenance.stream_config_path,
+        "stream_parameters": run.provenance.stream_parameters,
+        "first_scored_index": run.result.stats.first_scored_index,
+        "alarm_indices": evaluation.alarm_indices,
+        "event_matches": [
+            {**asdict(match), "delay": match.delay} for match in evaluation.matches
+        ],
+        "false_alarm_indices": evaluation.false_alarm_indices,
+        "excluded_warmup_drift_events": [
+            asdict(event) for event in evaluation.excluded_events
+        ],
+        **summarize_drift([evaluation]),
+    }
+
+
+def summarize_drift_groups(
+    groups: dict[tuple[str, str], list[DriftEvaluation]], pair_records: list[dict]
+) -> dict:
+    by_drift = {}
+    by_variant = defaultdict(list)
+    for (drift_type, variant), evaluations in groups.items():
+        by_drift.setdefault(drift_type, {})[variant] = summarize_drift(evaluations)
+        by_variant[variant].extend(evaluations)
+    return {
+        "pooled": summarize_drift(
+            evaluation for group in groups.values() for evaluation in group
+        ),
+        "by_variant": {
+            variant: summarize_drift(evaluations)
+            for variant, evaluations in by_variant.items()
+        },
+        "by_drift": by_drift,
+        "paired_false_alarms": {
+            "pooled": _paired_summary(pair_records),
+            "by_drift": {
+                drift: _paired_summary(
+                    [pair for pair in pair_records if pair["drift_type"] == drift]
+                )
+                for drift in by_drift
+            },
+        },
     }
 
 
@@ -179,26 +236,13 @@ def _evaluate(
             evaluation = evaluate_drift(run)
             groups[config.drift_type, variant].append(evaluation)
             pair.append((variant, run, evaluation))
-            row = {
-                "stream_id": static_baseline.stream_id_for(config, variant),
-                "pair_id": pair_id,
-                "variant": variant,
-                "drift_type": config.drift_type,
-                "seed": config.seed,
-                "stream_config_path": str(path),
-                "stream_parameters": run.provenance.stream_parameters,
-                "first_scored_index": run.result.stats.first_scored_index,
-                "alarm_indices": evaluation.alarm_indices,
-                "event_matches": [
-                    {**asdict(match), "delay": match.delay}
-                    for match in evaluation.matches
-                ],
-                "false_alarm_indices": evaluation.false_alarm_indices,
-                "excluded_warmup_drift_events": [
-                    asdict(event) for event in evaluation.excluded_events
-                ],
-                **summarize_drift([evaluation]),
-            }
+            row = drift_stream_record(
+                run,
+                evaluation,
+                static_baseline.stream_id_for(config, variant),
+                pair_id,
+                variant,
+            )
             per_stream.append(row)
             if reference is not None:
                 adwin = reference.match_stream(row, run)
@@ -209,7 +253,7 @@ def _evaluate(
                     )
                 )
         pair_records.append(
-            _pair_record(pair_id, scenario.drift_type, pair[0][2], pair[1][2])
+            pair_record(pair_id, scenario.drift_type, pair[0][2], pair[1][2])
         )
         if plot_dir is not None and scenario == template:
             _plot_pair(
@@ -220,30 +264,7 @@ def _evaluate(
             )
 
     assert first is not None
-    by_drift = {}
-    by_variant = defaultdict(list)
-    for (drift_type, variant), evaluations in groups.items():
-        by_drift.setdefault(drift_type, {})[variant] = summarize_drift(evaluations)
-        by_variant[variant].extend(evaluations)
-    aggregate = {
-        "pooled": summarize_drift(
-            evaluation for group in groups.values() for evaluation in group
-        ),
-        "by_variant": {
-            variant: summarize_drift(evaluations)
-            for variant, evaluations in by_variant.items()
-        },
-        "by_drift": by_drift,
-        "paired_false_alarms": {
-            "pooled": _paired_summary(pair_records),
-            "by_drift": {
-                drift: _paired_summary(
-                    [pair for pair in pair_records if pair["drift_type"] == drift]
-                )
-                for drift in by_drift
-            },
-        },
-    }
+    aggregate = summarize_drift_groups(groups, pair_records)
     manifest = {
         "schema_version": 1,
         "split": first.split,
