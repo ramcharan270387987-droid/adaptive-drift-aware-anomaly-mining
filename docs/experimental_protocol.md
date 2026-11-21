@@ -49,6 +49,8 @@ Compare these policies for the same anomaly detector, with the same per-stream w
 
 Select the fixed schedule, permitted window lengths, and drift detector parameters on development streams. Match update data budgets where applicable and report realized update counts and sizes. Record score, decision, drift and persistence evidence, and update reason to make decisions inspectable.
 
+The [selective adaptation protocol](selective_adaptation_protocol.md) freezes the proposed policy, ablations, and separate timing-robustness set before implementation.
+
 ## Metrics and success criteria
 
 - **Anomaly detection.** Report precision, recall, F1, and false-positive rate using scored points. Use point labels for the primary NAB analysis. Also report a separate NAB window hit rate with at most one hit per labeled window. Aggregate confusion counts across streams and show per-stream results. Report PR-AUC as average precision on ranked scores when both classes are present. Mark undefined metrics as unavailable and report the denominator. Report false-positive rate among nominal observations during and in the 256 samples after each synthetic shift, clipping at the next shift where applicable.
