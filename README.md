@@ -22,4 +22,5 @@ The planned workflow uses Codex Cloud for development and quick CPU tests, GitHu
 - [Fixed-schedule adaptation control](docs/fixed_schedule_adaptation.md)
 - [Proposed selective adaptation protocol](docs/selective_adaptation_protocol.md)
 - [Selective adaptation implementation and smoke checks](docs/selective_adaptation_implementation.md)
+- [Selective adaptation development ablations](docs/selective_adaptation_development.md)
 - [Repository layout and experiment workflow](docs/execution_workflow.md)

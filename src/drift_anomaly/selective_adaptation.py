@@ -19,6 +19,7 @@ BLOCK_SIZE = 64
 WINDOW_SIZE = 256
 MIN_RETAINED = 128
 SHIFT_CUTOFF = 0.50
+SENSITIVITY_CUTOFFS = (0.50, 0.75, 1.00)
 COOLDOWN = 128
 MAX_REFITS = 15
 MAX_FIT_INPUTS = 3840
@@ -78,10 +79,19 @@ class SelectiveZScore:
         anomaly: StaticZScore,
         drift: StreamingDetector,
         mode: Ablation = Ablation.FULL,
+        *,
+        persistence_cutoff: float = SHIFT_CUTOFF,
     ) -> None:
         self._anomaly = anomaly
         self._drift = drift
         self.mode = Ablation(mode)
+        if persistence_cutoff not in SENSITIVITY_CUTOFFS or (
+            persistence_cutoff != SHIFT_CUTOFF and self.mode is not Ablation.FULL
+        ):
+            raise ValueError(
+                "only the frozen full-policy sensitivity cutoffs are allowed"
+            )
+        self.persistence_cutoff = persistence_cutoff
         self.identifier = f"zscore_selective_{self.mode}"
         self._clear_state()
 
@@ -195,7 +205,7 @@ class SelectiveZScore:
         failures = []
         if medians is not None:
             shifts = [(value - proposal.mean) / proposal.scale for value in medians]
-            edge = SHIFT_CUTOFF * proposal.scale
+            edge = self.persistence_cutoff * proposal.scale
             persistence = all(
                 value >= proposal.mean + edge for value in medians
             ) or all(value <= proposal.mean - edge for value in medians)
