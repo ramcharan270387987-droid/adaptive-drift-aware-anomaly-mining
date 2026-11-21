@@ -8,5 +8,16 @@ The project is at the setup stage. No datasets have been validated, no models ha
 
 The planned workflow uses Codex Cloud for development and quick CPU tests, GitHub for version control, and Kaggle's free CPU runtime for experiments that exceed the practical limits of Codex Cloud.
 
+## Development setup
+
+With Python 3.12 and uv available, run from the repository root.
+
+```bash
+uv sync --locked
+uv run --locked pytest
+```
+
+The test checks that the package and its core libraries import successfully.
+
 - [Environment verification](docs/environment.md)
 - [Repository layout and experiment workflow](docs/execution_workflow.md)

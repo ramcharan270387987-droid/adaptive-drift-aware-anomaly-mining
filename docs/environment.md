@@ -24,6 +24,8 @@ Initial observations from 21 November 2026 in the selected Codex Cloud environme
 
 The project scaffold was initialized under `/workspace/adaptive-drift-aware-anomaly-mining`. The base environment had uv 0.13.9. The initial virtual environment was bootstrapped with the Python standard library.
 
+The development setup uses Python 3.12 and uv. The project requirements are in `pyproject.toml` and exact resolutions are in `uv.lock`. In Codex Cloud, `uv sync --locked` installed the package and dependencies. `uv run --locked pytest` passed one import smoke test on Python 3.12.14. `uv lock --check` and `uv pip check` passed.
+
 ## Connectivity
 
 | Endpoint | Check | Result |
