@@ -2,6 +2,7 @@
 
 import csv
 import json
+import math
 import os
 import platform
 from collections.abc import Callable
@@ -218,6 +219,7 @@ def run_baseline[Config](
     build_detector: Callable[[Config], StreamingDetector],
     scored_csv: bool = False,
     plot: Callable[[DevelopmentReplay, Path, float], None] | None = None,
+    record_runtime: bool = False,
 ) -> dict:
     experiment = load_experiment(config_path, parse_detector)
     root = Path.cwd() / "results"
@@ -237,12 +239,15 @@ def run_baseline[Config](
             build_detector,
             scored_csv=scored_csv,
             plot=plot,
+            record_runtime=record_runtime,
         )
         staged.rename(output)
     return aggregate
 
 
-def _evaluate(experiment, config_path, output, build_detector, *, scored_csv, plot):
+def _evaluate(
+    experiment, config_path, output, build_detector, *, scored_csv, plot, record_runtime
+):
     if plot is not None:
         cache = Path.cwd() / ".cache"
         cache.mkdir(exist_ok=True)
@@ -253,6 +258,7 @@ def _evaluate(experiment, config_path, output, build_detector, *, scored_csv, pl
         matplotlib.use("Agg")
         (output / "plots").mkdir()
     per_stream = []
+    runtime = []
     groups = {}
     first = None
     csv_output = (
@@ -279,6 +285,16 @@ def _evaluate(experiment, config_path, output, build_detector, *, scored_csv, pl
                 )
                 if first is None:
                     first = run.provenance
+                if record_runtime:
+                    stats = run.result.stats
+                    runtime.append(
+                        {
+                            "stream_id": stream_id,
+                            "elapsed_seconds": stats.elapsed_seconds,
+                            "scored_count": stats.scored_count,
+                            "scored_observations_per_second": stats.scored_observations_per_second,
+                        }
+                    )
                 prediction = next(run.result.scored_records()).prediction
                 assert prediction is not None
                 threshold = prediction.metadata["threshold"]
@@ -355,4 +371,18 @@ def _evaluate(experiment, config_path, output, build_detector, *, scored_csv, pl
     )
     _write_json(output / "per_stream_metrics.json", per_stream)
     _write_json(output / "aggregate.json", aggregate)
+    if runtime:
+        elapsed = math.fsum(row["elapsed_seconds"] for row in runtime)
+        scored = aggregate["pooled"]["scored_count"]
+        _write_json(
+            output / "runtime.json",
+            {
+                "scored_count": scored,
+                "elapsed_seconds": elapsed,
+                "scored_observations_per_second": scored / elapsed
+                if elapsed > 0
+                else None,
+                "per_stream": runtime,
+            },
+        )
     return aggregate
