@@ -1,12 +1,11 @@
 """River ADWIN on raw univariate observations."""
 
-import math
 from dataclasses import dataclass
 from typing import Literal
 
 from river.drift import ADWIN
 
-from drift_anomaly.replay import Prediction, UpdateEvent
+from drift_anomaly.river_drift import RiverDriftDetector
 
 
 @dataclass(frozen=True)
@@ -34,36 +33,15 @@ class ADWINConfig:
             raise ValueError("ADWIN expects signal: raw_value")
 
 
-class ADWINDetector:
+class ADWINDetector(RiverDriftDetector[ADWINConfig]):
     identifier = "adwin"
 
-    def __init__(self, config: ADWINConfig) -> None:
-        self.config = config
-        self._detector: ADWIN | None = None
-
-    def fit_initial(self, values: tuple[float, ...]) -> None:
+    def _new_detector(self) -> ADWIN:
         config = self.config
-        self._detector = ADWIN(
+        return ADWIN(
             delta=config.delta,
             clock=config.clock,
             max_buckets=config.max_buckets,
             min_window_length=config.min_window_length,
             grace_period=config.grace_period,
         )
-        for value in values:
-            self.update_one(value)
-
-    def score_one(self, value: float) -> Prediction:
-        """Leave the anomaly prediction empty for this drift-only detector."""
-        return Prediction()
-
-    def update_one(self, value: float) -> UpdateEvent | None:
-        detector = self._detector
-        if detector is None:
-            raise ValueError("ADWIN must be initialized before updates")
-        if not math.isfinite(value):
-            raise ValueError("ADWIN observation must be finite")
-        detector.update(value)
-        if detector.drift_detected:
-            return UpdateEvent(drift_alarm=True)
-        return None

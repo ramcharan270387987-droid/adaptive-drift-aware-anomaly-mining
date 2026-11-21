@@ -8,7 +8,12 @@ from pathlib import Path
 import pytest
 import yaml
 
-from drift_anomaly.experiments import adwin_baseline, lof_baseline, static_baseline
+from drift_anomaly.experiments import (
+    adwin_baseline,
+    drift_baseline,
+    lof_baseline,
+    static_baseline,
+)
 from drift_anomaly.synthetic import generate_stream
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,7 +67,7 @@ def test_rejected_config_does_not_reach_replay(
     def unexpected(*args, **kwargs):
         pytest.fail("guarded input reached replay")
 
-    monkeypatch.setattr(adwin_baseline, "replay_synthetic_development", unexpected)
+    monkeypatch.setattr(drift_baseline, "replay_synthetic_development", unexpected)
     monkeypatch.chdir(tmp_path)
     with pytest.raises(ValueError, match=message):
         adwin_baseline.run_experiment(
