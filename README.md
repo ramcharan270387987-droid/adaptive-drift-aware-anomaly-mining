@@ -16,4 +16,5 @@ The planned workflow uses Codex Cloud for development and quick CPU tests, GitHu
 - [Development baseline and reproduction command](docs/zscore_baseline.md)
 - [Development Isolation Forest baseline and comparison](docs/isolation_forest_baseline.md)
 - [Development LOF baseline and three-detector comparison](docs/lof_baseline.md)
+- [Development ADWIN drift baseline](docs/adwin_baseline.md)
 - [Repository layout and experiment workflow](docs/execution_workflow.md)

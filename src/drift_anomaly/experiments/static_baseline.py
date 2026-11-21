@@ -6,7 +6,7 @@ import math
 import os
 import platform
 from collections.abc import Callable
-from contextlib import nullcontext
+from contextlib import contextmanager, nullcontext
 from dataclasses import asdict, dataclass, replace
 from importlib.metadata import version
 from itertools import product
@@ -163,7 +163,12 @@ def scenarios(experiment: Experiment):
             )
 
 
-def _stream_id(config: SyntheticConfig, variant: str) -> str:
+def paired_variants(scenario: SyntheticConfig):
+    yield "clean", replace(scenario, anomaly_count=0, anomaly_fraction=None)
+    yield "injected", scenario
+
+
+def stream_id_for(config: SyntheticConfig, variant: str) -> str:
     parts = [config.drift_type, f"seed{config.seed}"]
     if config.drift_type != "none":
         parts.extend((f"onset{config.drift_start}", f"shift{float(config.post_mean)}"))
@@ -205,10 +210,39 @@ def _write_scored(writer, run: DevelopmentReplay, stream_id: str) -> None:
         )
 
 
-def _write_json(path: Path, value) -> None:
+def write_json(path: Path, value) -> None:
     path.write_text(
         json.dumps(value, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
+
+
+@contextmanager
+def staged_output(output: Path):
+    root = Path.cwd() / "results"
+    output = output.resolve()
+    if output == root or not output.is_relative_to(root):
+        raise ValueError("output must be a new directory under results/")
+    if output.exists():
+        raise FileExistsError(f"output directory already exists: {output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(dir=output.parent) as temporary:
+        staged = Path(temporary) / "baseline"
+        staged.mkdir()
+        yield staged
+        staged.rename(output)
+
+
+def prepare_plots(output: Path) -> Path:
+    cache = Path.cwd() / ".cache"
+    cache.mkdir(exist_ok=True)
+    os.environ.setdefault("XDG_CACHE_HOME", str(cache))
+    os.environ.setdefault("MPLCONFIGDIR", str(cache / "matplotlib"))
+    import matplotlib
+
+    matplotlib.use("Agg")
+    path = output / "plots"
+    path.mkdir()
+    return path
 
 
 def run_baseline[Config](
@@ -222,16 +256,7 @@ def run_baseline[Config](
     record_runtime: bool = False,
 ) -> dict:
     experiment = load_experiment(config_path, parse_detector)
-    root = Path.cwd() / "results"
-    output = output.resolve()
-    if output == root or not output.is_relative_to(root):
-        raise ValueError("output must be a new directory under results/")
-    if output.exists():
-        raise FileExistsError(f"output directory already exists: {output}")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    with TemporaryDirectory(dir=output.parent) as temporary:
-        staged = Path(temporary) / "baseline"
-        staged.mkdir()
+    with staged_output(output) as staged:
         aggregate = _evaluate(
             experiment,
             config_path,
@@ -241,7 +266,6 @@ def run_baseline[Config](
             plot=plot,
             record_runtime=record_runtime,
         )
-        staged.rename(output)
     return aggregate
 
 
@@ -249,14 +273,7 @@ def _evaluate(
     experiment, config_path, output, build_detector, *, scored_csv, plot, record_runtime
 ):
     if plot is not None:
-        cache = Path.cwd() / ".cache"
-        cache.mkdir(exist_ok=True)
-        os.environ.setdefault("XDG_CACHE_HOME", str(cache))
-        os.environ.setdefault("MPLCONFIGDIR", str(cache / "matplotlib"))
-        import matplotlib
-
-        matplotlib.use("Agg")
-        (output / "plots").mkdir()
+        prepare_plots(output)
     per_stream = []
     runtime = []
     groups = {}
@@ -271,13 +288,8 @@ def _evaluate(
         if writer is not None:
             writer.writerow(CSV_FIELDS)
         for path, template, scenario in scenarios(experiment):
-            for variant in ("clean", "injected"):
-                config = (
-                    replace(scenario, anomaly_count=0, anomaly_fraction=None)
-                    if variant == "clean"
-                    else scenario
-                )
-                stream_id = _stream_id(config, variant)
+            for variant, config in paired_variants(scenario):
+                stream_id = stream_id_for(config, variant)
                 run = replay_synthetic_development(
                     config,
                     lambda: build_detector(experiment.detector),
@@ -342,7 +354,7 @@ def _evaluate(
         "by_drift": by_drift,
         "pooled": overall.summary(),
     }
-    _write_json(
+    write_json(
         output / "manifest.json",
         {
             "schema_version": 1,
@@ -369,12 +381,12 @@ def _evaluate(
             "plots": plot is not None,
         },
     )
-    _write_json(output / "per_stream_metrics.json", per_stream)
-    _write_json(output / "aggregate.json", aggregate)
+    write_json(output / "per_stream_metrics.json", per_stream)
+    write_json(output / "aggregate.json", aggregate)
     if runtime:
         elapsed = math.fsum(row["elapsed_seconds"] for row in runtime)
         scored = aggregate["pooled"]["scored_count"]
-        _write_json(
+        write_json(
             output / "runtime.json",
             {
                 "scored_count": scored,
