@@ -24,4 +24,5 @@ The planned workflow uses Codex Cloud for development and quick CPU tests, GitHu
 - [Selective adaptation implementation and smoke checks](docs/selective_adaptation_implementation.md)
 - [Selective adaptation development ablations](docs/selective_adaptation_development.md)
 - [Pre-final robustness and NAB development validation](docs/pre_final_validation.md)
+- [Final untouched evaluation and execution receipt](docs/final_evaluation.md)
 - [Repository layout and experiment workflow](docs/execution_workflow.md)

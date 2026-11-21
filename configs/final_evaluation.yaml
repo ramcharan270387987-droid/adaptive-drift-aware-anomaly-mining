@@ -1,5 +1,17 @@
 schema_version: 1
-status: frozen
+status: executed
+execution_receipt:
+  frozen_git_commit: 7e72ccb61297d58567fb1e41c077e6b537e9d897
+  executed_at_utc: '2026-11-21T22:28:15.866666+00:00'
+  protocol_version: 1
+  original_spec_status: frozen
+  sha256:
+    results/final_evaluation/manifest.json: dade20b5e1cd469976d0153dba54ecc91c07a12333e65dfb69ca1d9406001a8d
+    results/final_evaluation/primary_synthetic/comparison.json: 1fb16fe89ff93acd2eddf6c2851356fd695c9bcb3287e85f340a57bd2c65430b
+    results/final_evaluation/primary_synthetic/paired_statistics.json: 7e8ab14dcd0f78f1a6e6864bf52a406b4f0d5026b05b05c1e32c73e283954c3f
+    results/final_evaluation/nab_final.json: 9711e7507dcec48fadbca7ae58f2d3b55337d019fa16aef0974d7356703d8601
+    results/final_evaluation/confirmatory_result.json: eb34977e3323360e30dcd299972679728d314e1318b3b25c421bcba94c1d7a48
+    results/final_evaluation/report_artifacts/verification.json: 4321a9a88dc79c64cc91ffe422291c41265efa9a977db3829448d13aacca5c2d
 software_revision:
   type: execution_tree_sha256
   value: a75d7c3c968a8263c1e2047cde34a603d3fb4bb7ea026c8eb68737b374f9a723
