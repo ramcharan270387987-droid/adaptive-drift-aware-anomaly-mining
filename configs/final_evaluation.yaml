@@ -1,0 +1,232 @@
+schema_version: 1
+status: frozen
+software_revision:
+  type: execution_tree_sha256
+  value: a75d7c3c968a8263c1e2047cde34a603d3fb4bb7ea026c8eb68737b374f9a723
+confirmatory_method: full
+development_selected_secondary: persistence
+selection_evidence: aligned_synthetic_development
+warmup: 256
+synthetic:
+  split: primary_synthetic_holdout
+  grid:
+    seeds:
+    - 1000
+    - 1001
+    - 1002
+    - 1003
+    - 1004
+    - 1005
+    - 1006
+    - 1007
+    - 1008
+    - 1009
+    - 1010
+    - 1011
+    - 1012
+    - 1013
+    - 1014
+    - 1015
+    - 1016
+    - 1017
+    - 1018
+    - 1019
+    onsets:
+    - 1536
+    - 2560
+    shifts: &id001
+    - 1
+    - 2.25
+    durations: &id002
+    - 192
+    - 384
+  templates:
+  - configs/synthetic/gradual_holdout.yaml
+  - configs/synthetic/incremental_holdout.yaml
+  - configs/synthetic/recurring_holdout.yaml
+  - configs/synthetic/stationary_holdout.yaml
+  - configs/synthetic/sudden_holdout.yaml
+  streams_per_arm: 1000
+  families:
+  - stationary
+  - sudden
+  - gradual
+  - incremental
+  - recurring
+  injection:
+    paired: true
+    count: 12
+    min_separation: 16
+    magnitude: 6.0
+  length: 4096
+  state_offset: 512
+  standard_deviation: 1.0
+  arms:
+  - full
+  - immediate
+  - persistence
+  - filtering
+  - static_zscore
+  - fixed_schedule
+  - zscore_adwin_no_adaptation
+  - zscore_page_hinkley_no_adaptation
+  - isolation_forest
+  - lof
+robustness:
+  grid:
+    seeds:
+    - 2000
+    - 2001
+    - 2002
+    - 2003
+    - 2004
+    - 2005
+    - 2006
+    - 2007
+    - 2008
+    - 2009
+    onsets:
+    - 1603
+    - 2747
+    shifts: *id001
+    durations: *id002
+  streams_per_arm: 500
+  arms:
+  - full
+  - immediate
+  - persistence
+  - filtering
+  - static_zscore
+  - fixed_schedule
+  - zscore_adwin_no_adaptation
+  - zscore_page_hinkley_no_adaptation
+  stage_status: already_observed_separate_robustness_excluded_from_final_command
+nab:
+  manifest: configs/nab.yaml
+  revision: ea702d75cc2258d9d7dd35ca8e5e2539d71f3140
+  final_sha256:
+    realKnownCause/nyc_taxi.csv: d8fa6f7f0734bf5c8be12c52a94e20a82664c397d9dec4449156bd453d32856d
+    realKnownCause/machine_temperature_system_failure.csv: 92bf5b87fc7f9bba8ca0b7ec63ccaac8cb4a1371a258e8c29a10ae9c018d82a4
+    realAdExchange/exchange-3_cpc_results.csv: e70b24dba107a2589657cb3feb9ca5605b4f3f7de49ff445f32f5991bc0bdbe5
+    artificialWithAnomaly/art_increase_spike_density.csv: 0959d8871d5c1a3fc3120fb7421e4ef113fffb434af2889085b52aebdb69360c
+    artificialNoAnomaly/art_flatline.csv: 1cc10761ddd6d55fb5f0d9cfc73610416abbb120ee14bb65eff288509a463397
+  arms:
+  - static_zscore
+  - isolation_forest
+  - lof
+  - fixed_schedule
+  - persistence
+  - full
+  point_rule: exact_timestamp_first_source_row
+  window_rule: inclusive_endpoints_at_most_one_hit_per_scored_window
+  timestamp_rule: source_order_keep_ties_skip_backwards_without_sorting
+  drift_truth_available: false
+models:
+  zscore:
+    threshold: 3.0
+    minimum_std: 1.0e-12
+  adwin:
+    delta: 0.002
+    clock: 32
+    max_buckets: 5
+    min_window_length: 5
+    grace_period: 10
+    signal: raw_value
+  page_hinkley:
+    min_instances: 30
+    delta: 0.005
+    threshold: 50.0
+    alpha: 0.9999
+    mode: both
+    signal: raw_value
+  fixed_schedule:
+    threshold: 3.0
+    minimum_std: 1.0e-12
+    adaptation_interval: 256
+    window_size: 256
+    warmup: 256
+  isolation_forest:
+    random_state: 42
+    n_estimators: 100
+    contamination: auto
+    max_samples: 256
+    threshold: null
+  lof:
+    n_neighbors: 20
+    contamination: auto
+    novelty: true
+    metric: euclidean
+    decision_rule: score > -offset_
+  selective:
+    persistence_cutoff: 0.5
+    checkpoints:
+    - 128
+    - 192
+    - 256
+    median_block_size: 64
+    window_size: 256
+    min_retained: 128
+    max_refits: 15
+    max_input_uses: 3840
+    immediate:
+      candidate: trailing_window_including_alarm
+      persistence: false
+      filter: false
+      cooldown: 0
+    persistence:
+      candidate: strictly_post_alarm
+      persistence: true
+      filter: false
+      cooldown: 0
+    filtering:
+      candidate: strictly_post_alarm
+      persistence: true
+      filter: true
+      cooldown: 0
+    full:
+      candidate: strictly_post_alarm
+      persistence: true
+      filter: true
+      cooldown: 128
+metrics:
+  pointwise:
+  - tp
+  - fp
+  - tn
+  - fn
+  - precision
+  - recall
+  - f1
+  - fpr
+  - average_precision
+  nab_supplement:
+  - window_hit_rate
+  - observed_alarm_refit_window_proximity
+  synthetic_supplement:
+  - phase_false_positives
+  - event_window_fpr
+  - alarm_matching
+  - refit_matching
+  cost:
+  - refits
+  - refit_input_uses
+  - elapsed_seconds
+  - scored_throughput
+  - peak_process_rss
+  primary_pair:
+  - full
+  - static_zscore
+  event_window_after_end: 256
+  alarm_window_after_end: 128
+  refit_window_after_end: 384
+  bootstrap_seed: 1729
+  bootstrap_replicates: 10000
+  fpr_ci_upper_bound_below: 0.0
+  recall_ci_lower_bound_above: -0.05
+stages:
+- validate_manifest_and_authorization
+- verify_nab_final_provenance
+- primary_synthetic_holdout
+- nab_final
+- report
+output: results/final_evaluation
