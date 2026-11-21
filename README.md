@@ -12,4 +12,5 @@ The planned workflow uses Codex Cloud for development and quick CPU tests, GitHu
 - [NAB provenance, quality audit, and dataset split](docs/dataset_protocol.md)
 - [Experimental protocol](docs/experimental_protocol.md)
 - [Synthetic stream generator](docs/synthetic_streams.md)
+- [Causal streaming replay](docs/replay.md)
 - [Repository layout and experiment workflow](docs/execution_workflow.md)
