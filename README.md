@@ -4,7 +4,7 @@
 
 Can explicit concept-drift detection and selective model adaptation reduce false anomaly alarms after distribution changes without reducing sensitivity to genuine anomalies?
 
-The NAB subset has been acquired and audited for data quality. The experimental protocol is defined. No models have been trained, and no scientific results exist yet.
+The NAB subset has been acquired and audited for data quality. The experimental protocol is defined, and the static Z-score baseline has been evaluated on synthetic development streams. Holdout evaluation is pending.
 
 The planned workflow uses Codex Cloud for development and quick CPU tests, GitHub for version control, and Kaggle's free CPU runtime for experiments that exceed the practical limits of Codex Cloud.
 
@@ -13,4 +13,5 @@ The planned workflow uses Codex Cloud for development and quick CPU tests, GitHu
 - [Experimental protocol](docs/experimental_protocol.md)
 - [Synthetic stream generator](docs/synthetic_streams.md)
 - [Causal streaming replay](docs/replay.md)
+- [Development baseline and reproduction command](docs/zscore_baseline.md)
 - [Repository layout and experiment workflow](docs/execution_workflow.md)

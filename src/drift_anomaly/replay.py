@@ -17,7 +17,12 @@ from typing import Protocol
 
 import yaml
 
-from drift_anomaly.synthetic import DriftEvent, generate_stream, load_config
+from drift_anomaly.synthetic import (
+    DriftEvent,
+    SyntheticConfig,
+    generate_stream,
+    load_config,
+)
 
 DEFAULT_WARMUP = 256
 
@@ -215,12 +220,30 @@ def replay_development(
     warmup: int = DEFAULT_WARMUP,
 ) -> DevelopmentReplay:
     """Load one explicit development config and reject holdout before generation."""
-    config = load_config(config_path)
+    return replay_synthetic_development(
+        load_config(config_path),
+        detector_factory,
+        config_path=config_path,
+        warmup=warmup,
+    )
+
+
+def validate_development_config(config: SyntheticConfig) -> None:
     if config.split != "development" or config.seed not in range(10):
         raise ValueError(
             "development replay requires split 'development' and a seed from 0 to 9"
         )
 
+
+def replay_synthetic_development(
+    config: SyntheticConfig,
+    detector_factory: Callable[[], StreamingDetector],
+    *,
+    config_path: Path,
+    warmup: int = DEFAULT_WARMUP,
+) -> DevelopmentReplay:
+    """Replay an effective development configuration and record its source path."""
+    validate_development_config(config)
     executed_at = datetime.now(UTC).isoformat()
     stream = generate_stream(config)
     observations = (
