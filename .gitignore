@@ -36,4 +36,5 @@ id_dsa
 /data/raw/
 /data/processed/
 /data/cache/
+/data/generated/
 /results/

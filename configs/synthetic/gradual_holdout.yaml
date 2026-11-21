@@ -1,0 +1,16 @@
+split: final_evaluation
+drift_type: gradual
+seed: 1001
+n_observations: 4096
+pre_mean: 0.0
+pre_std: 1.0
+post_mean: 2.25
+post_std: 1.0
+drift_start: 2560
+drift_duration: 384
+anomaly_count: 12
+anomaly_magnitude: 6.0
+anomaly_placement: protocol
+warmup: 256
+min_anomaly_separation: 16
+priority_anomaly_count: 3

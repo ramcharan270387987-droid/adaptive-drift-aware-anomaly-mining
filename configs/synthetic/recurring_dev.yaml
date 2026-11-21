@@ -1,0 +1,17 @@
+split: development
+drift_type: recurring
+seed: 3
+n_observations: 4096
+pre_mean: 0.0
+pre_std: 1.0
+post_mean: 3.0
+post_std: 1.0
+drift_start: 2048
+recurrence_period: 512
+anomaly_count: 12
+anomaly_magnitude: 6.0
+anomaly_placement: protocol
+warmup: 256
+min_anomaly_separation: 16
+post_change_window: 64
+priority_anomaly_count: 3
