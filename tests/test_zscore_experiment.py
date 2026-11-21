@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from drift_anomaly.experiments import static_baseline
 from drift_anomaly.experiments import zscore_baseline as experiment
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,7 +21,9 @@ def test_development_config_covers_the_protocol_grid():
     config = experiment.load_experiment(DEVELOPMENT)
     assert config.detector.threshold == 3.0
     assert config.grid["seeds"] == tuple(range(10))
-    assert Counter(case.drift_type for _, _, case in experiment._scenarios(config)) == {
+    assert Counter(
+        case.drift_type for _, _, case in static_baseline.scenarios(config)
+    ) == {
         "none": 10,
         "sudden": 40,
         "gradual": 80,
@@ -53,7 +56,7 @@ def test_disallowed_inputs_stop_before_any_replay(
     def unexpected(*args, **kwargs):
         pytest.fail("replay was called before inputs were fully validated")
 
-    monkeypatch.setattr(experiment, "replay_synthetic_development", unexpected)
+    monkeypatch.setattr(static_baseline, "replay_synthetic_development", unexpected)
     monkeypatch.chdir(tmp_path)
     config = write_config(
         tmp_path,
