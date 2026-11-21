@@ -244,6 +244,18 @@ def replay_synthetic_development(
 ) -> DevelopmentReplay:
     """Replay an effective development configuration and record its source path."""
     validate_development_config(config)
+    return _replay_synthetic(
+        config, detector_factory, config_path=config_path, warmup=warmup
+    )
+
+
+def _replay_synthetic(
+    config: SyntheticConfig,
+    detector_factory: Callable[[], StreamingDetector],
+    *,
+    config_path: Path,
+    warmup: int = DEFAULT_WARMUP,
+) -> DevelopmentReplay:
     executed_at = datetime.now(UTC).isoformat()
     stream = generate_stream(config)
     observations = (

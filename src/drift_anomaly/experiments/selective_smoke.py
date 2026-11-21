@@ -9,7 +9,11 @@ import yaml
 
 from drift_anomaly.adwin import ADWINConfig, ADWINDetector
 from drift_anomaly.experiments import adwin_baseline, static_baseline
-from drift_anomaly.replay import DevelopmentReplay, replay_synthetic_development
+from drift_anomaly.replay import (
+    DevelopmentReplay,
+    ReplayResult,
+    replay_synthetic_development,
+)
 from drift_anomaly.selective_adaptation import (
     BLOCK_SIZE,
     CHECKPOINTS,
@@ -30,11 +34,15 @@ FROZEN_ZSCORE = ZScoreConfig(3.0, 1e-12)
 
 
 def stream_diagnostics(run: DevelopmentReplay) -> dict:
-    indices = [record.observation.index for record in run.result.records]
+    return selective_diagnostics(run.result)
+
+
+def selective_diagnostics(result: ReplayResult) -> dict:
+    indices = [record.observation.index for record in result.records]
     alarms = []
     proposals = {}
     budget = RefitBudget().as_metadata()
-    for record in run.result.scored_records():
+    for record in result.scored_records():
         if record.update is None:
             continue
         index = record.observation.index
@@ -103,7 +111,7 @@ def stream_diagnostics(run: DevelopmentReplay) -> dict:
         "proposals": list(proposals.values()),
         "refit_count": budget["refits"],
         "refit_input_uses": budget["refit_input_uses"],
-        "scored_count": run.result.stats.scored_count,
+        "scored_count": result.stats.scored_count,
     }
 
 

@@ -90,7 +90,23 @@ def write_json(path, data):
 
 def fetch(config, raw):
     manifest = provenance(config)
-    for name, entry in manifest["files"].items():
+    _fetch_files(manifest["files"], raw)
+    write_json(raw / "provenance.json", manifest)
+
+
+def fetch_split(config, raw, split):
+    """Acquire only the CSVs allowed for this experiment and shared metadata."""
+    manifest = provenance(config)
+    requested = set(config["metadata"]) | {f"data/{name}" for name in config[split]}
+    files = {
+        name: entry for name, entry in manifest["files"].items() if name in requested
+    }
+    _fetch_files(files, raw)
+    write_json(raw / f"provenance_{split}.json", {**manifest, "files": files})
+
+
+def _fetch_files(files, raw):
+    for name, entry in files.items():
         path = raw / name
         if path.exists():
             checked_bytes(path.read_bytes(), entry["sha256"], name)
@@ -98,7 +114,6 @@ def fetch(config, raw):
         with urlopen(entry["url"], timeout=30) as response:
             data = checked_bytes(response.read(), entry["sha256"], name)
         write_atomic(path, data)
-    write_json(raw / "provenance.json", manifest)
 
 
 def parse_timestamp(value):

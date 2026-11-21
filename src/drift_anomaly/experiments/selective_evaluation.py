@@ -339,7 +339,15 @@ def summarize_updates(rows: list[dict]) -> dict:
     }
 
 
-def _run_arm(arm, experiment, staged, full_windows):
+def _run_arm(
+    arm,
+    experiment,
+    staged,
+    full_windows,
+    *,
+    replay_stream=replay_synthetic_development,
+    inspect_run=None,
+):
     groups = {}
     drift_runs = []
     rows = []
@@ -347,7 +355,7 @@ def _run_arm(arm, experiment, staged, full_windows):
     provenance = None
     for path, _, scenario in static_baseline.scenarios(experiment):
         for variant, config in static_baseline.paired_variants(scenario):
-            run = replay_synthetic_development(config, arm.factory, config_path=path)
+            run = replay_stream(config, arm.factory, config_path=path)
             provenance = run.provenance
             stream_id = static_baseline.stream_id_for(config, variant)
             metric = AnomalyEvaluation()
@@ -360,6 +368,8 @@ def _run_arm(arm, experiment, staged, full_windows):
             groups[key] = group, count + 1
             detail = _stream_details(arm, run, stream_id, full_windows)
             drift = evaluate_drift(run) if arm.drift else None
+            if inspect_run is not None:
+                inspect_run(arm.name, stream_id, run, detail, drift)
             if drift is not None:
                 drift_runs.append(drift)
                 if arm.selective and len(drift.alarm_indices) != (
