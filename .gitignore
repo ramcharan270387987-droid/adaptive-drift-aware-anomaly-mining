@@ -1,0 +1,38 @@
+# Python and notebook tooling
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.DS_Store
+
+# Local credentials and secret mounts
+.env
+.env.*
+kaggle.json
+.kaggle/
+.secrets/
+secrets/
+credentials/
+.netrc
+.git-credentials
+credentials.json
+credentials.yaml
+credentials.yml
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+id_ecdsa
+id_dsa
+
+# Local data and run artifacts
+/data/raw/
+/data/processed/
+/data/cache/
+/results/
