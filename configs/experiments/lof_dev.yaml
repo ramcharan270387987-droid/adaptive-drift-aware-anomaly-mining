@@ -1,0 +1,19 @@
+detector:
+  type: lof_static
+  n_neighbors: 20
+  contamination: auto
+  novelty: true
+  metric: euclidean
+  decision_rule: "score > -offset_"
+warmup: 256
+streams:
+  - ../synthetic/stationary_dev.yaml
+  - ../synthetic/sudden_dev.yaml
+  - ../synthetic/gradual_dev.yaml
+  - ../synthetic/incremental_dev.yaml
+  - ../synthetic/recurring_dev.yaml
+grid:
+  seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  onsets: [1024, 2048]
+  shifts: [1.5, 3.0]
+  durations: [128, 256]

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>Adaptive Drift-Aware Anomaly Mining · Offline Demo</title>
+<style>
+:root{color-scheme:light;--paper:#f5f7f8;--ink:#182f3a;--accent:#006865;--muted:#405763;--edge:#c9d8da}
+*{box-sizing:border-box}
+html{scroll-padding-top:6rem}
+body{margin:0;background:var(--paper);color:var(--ink);font:1rem/1.6 system-ui,sans-serif}
+header,main,footer{max-width:76rem;margin:auto;padding:clamp(1.15rem,4vw,3.5rem)}
+header{padding-bottom:1.25rem}
+h1,h2,h3{line-height:1.15;letter-spacing:-.025em}
+h1{font-size:clamp(2.05rem,6vw,4.3rem);max-width:18ch;margin:.55em 0}
+h2{font-size:clamp(1.55rem,4vw,2.4rem)}
+p{max-width:76ch}
+.note{color:var(--muted)}
+nav{position:sticky;top:0;z-index:1;display:flex;flex-wrap:wrap;gap:.2rem 1.2rem;justify-content:center;border-block:1px solid var(--edge);background:white;padding:.7rem 1.1rem}
+a{color:var(--accent);text-underline-offset:.2em}
+section{padding-bottom:2rem}
+figure{margin:1rem 0;padding:1rem;background:white;border:1px solid var(--edge);border-radius:.6rem}
+img{max-width:100%;height:auto;display:block;margin:auto}
+figcaption{margin-top:.7rem;color:var(--muted)}
+details{padding:.7rem 1rem;background:white;border:1px solid var(--edge);border-radius:.45rem;margin-bottom:.6rem}
+summary{cursor:pointer;font-weight:650;color:var(--accent)}
+.table{overflow:auto;max-height:25rem;margin:1rem 0}
+table{width:100%;background:white;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:.5rem .7rem;text-align:left;border-bottom:1px solid var(--edge);white-space:nowrap}
+thead th{position:sticky;top:0;background:#dcebec}
+footer{color:var(--muted);border-top:1px solid var(--edge)}
+@media print{nav{position:static}.table{max-height:none}thead th{position:static}}
+</style>
+</head>
+<body>
+<header>
+<p class="note">Offline faculty demonstration · Recorded evidence</p>
+<h1>Adaptive Drift-Aware Explainable Streaming Anomaly Mining</h1>
+<p>Can explicit concept-drift detection and selective model adaptation reduce false anomaly alarms after distribution changes without reducing sensitivity to genuine anomalies?</p>
+<p>This presentation renders recorded artifacts. Live replay and model training require the local Streamlit dashboard.</p>
+</header>
+<nav aria-label="Demonstration navigation">
+<a href="#overview">Overview</a><a href="#replay">Sudden drift</a><a href="#nab-demo">NAB replay</a>
+<a href="#results">Final results</a><a href="#spark">Spark benchmark</a><a href="#limitations">Limitations</a>
+</nav>
+<main>
+<section id="overview">
+<h2>Architecture and methods</h2>
+<p>A 256-observation warm-up fits the initial reference. The streaming path scores each incoming value against the existing reference, then updates ADWIN and checks whether persistence, filtering and the budget permit a refit. Spark commits the prediction and state to SQLite. The dashboard reads that journal and explains the decision. The sealed research path separately compares frozen methods on synthetic holdout and NAB.</p>
+<figure><img src="$architecture" alt="Offline research pipeline and development Spark replay architecture"></figure>
+</section>
+<section id="replay">
+<h2>Sudden-drift development replay</h2>
+<figure><img src="$replay" alt="Recorded replay showing raw values, anomaly predictions and synthetic evaluation overlays"></figure>
+<figure><img src="$timeline" alt="Timeline from isolated anomaly through ADWIN alarm, persistence and refit"><figcaption>Open any observation below to inspect the recorded decision and scoring reference.</figcaption></figure>
+$events
+</section>
+<section id="nab-demo">
+<h2>NAB development replay</h2>
+<p>This CloudWatch CPU trace is a verified 896-observation development prefix. Its anomaly annotations support evaluation. NAB has no independent concept-drift labels.</p>
+<figure><img src="$nab_replay" alt="Recorded NAB dashboard with synthetic overlays absent"></figure>
+</section>
+<section id="results">
+<h2>Sealed research results</h2>
+<h3>Final synthetic holdout</h3>
+<p>The full selective policy passed both frozen synthetic criteria against static Z-score. The table reports pooled point metrics across phases.</p>
+$synthetic_table
+<h3>Final NAB</h3>
+<p>The full policy detected one additional labeled point and added 11,288 point false positives relative to static Z-score. Window hits are reported separately.</p>
+$nab_table
+<h3>Adaptation efficiency</h3>
+$efficiency_table
+<figure><img src="$failure" alt="Machine-temperature NAB failure case"><figcaption>The persistence variant retained the labeled window hit and added 115 point false positives in this case.</figcaption></figure>
+</section>
+<section id="spark">
+<h2>Single-host Spark benchmark</h2>
+<figure><img src="$benchmark" alt="Committed throughput and commit delay as local Spark workload increases"></figure>
+$spark_table
+</section>
+<section id="limitations">
+<h2>Limitations</h2>
+<ul>
+<li>The synthetic streams have scripted drift and injected anomalies. NAB traces contain real-world variation and anomaly annotations without independent concept-drift ground truth.</li>
+<li>The NAB false-alarm trade-off limits generalization from the controlled synthetic results.</li>
+<li>The Spark tests were finite CPU trials on one host with different trigger intervals. Long-run capacity and distributed scaling remain unmeasured.</li>
+</ul>
+</section>
+</main>
+<footer>Faculty demo · Fixed evidence from development replays and the sealed research results.</footer>
+</body>
+</html>

@@ -2,6 +2,7 @@
 .venv/
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 .ipynb_checkpoints/
 .mypy_cache/
@@ -35,4 +36,8 @@ id_dsa
 /data/raw/
 /data/processed/
 /data/cache/
+/data/generated/
 /results/
+
+# Generated faculty demo and snapshot archives
+/dist/

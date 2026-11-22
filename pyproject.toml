@@ -1,0 +1,31 @@
+[project]
+name = "drift-anomaly"
+version = "0.1.0"
+description = "Adaptive Drift-Aware Explainable Streaming Anomaly Mining"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "joblib",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "plotly",
+    "psutil",
+    "pyyaml",
+    "river",
+    "scikit-learn",
+    "scipy",
+]
+
+[dependency-groups]
+dev = ["pytest", "ruff"]
+
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

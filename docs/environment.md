@@ -1,36 +1,64 @@
 # Environment verification
 
-Initial observations from 21 November 2026 in the selected Codex Cloud environment. Tool availability and resource figures reflect that setup pass.
+Verified in Codex Cloud on 21 November 2026.
+
+## Reproduce the development environment
+
+Run these commands from the repository root with Python 3.12 and uv available. The setup was verified with Python **3.12.14** and uv **0.13.9**. The dependency manifest is [`pyproject.toml`](../pyproject.toml), and [`uv.lock`](../uv.lock) records the resolved dependencies. By default, uv installs the development group alongside the runtime dependencies and installs the `src/drift_anomaly` package in editable mode.
+
+```bash
+export UV_CACHE_DIR="$PWD/.cache/uv"
+uv sync --locked --python 3.12 --system-certs
+.venv/bin/python --version
+.venv/bin/python -m pytest
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+```
+
+For scripts that use Matplotlib, set a writable configuration and cache directory before Python starts. The example uses the repository's ignored cache directory. The smoke test uses a temporary directory.
+
+```bash
+export MPLCONFIGDIR="$PWD/.cache/matplotlib"
+```
+
+## Installed versions
+
+All listed Python packages were imported from the project environment using `.venv/bin/python`. The editable project package, `drift-anomaly` 0.1.0, imported from `src/drift_anomaly`.
+
+| Runtime dependency | Version | Development dependency | Version |
+| --- | --- | --- | --- |
+| NumPy | 2.5.5 | pytest | 9.2.0 |
+| Pandas | 3.1.1 | Ruff | 0.17.6 |
+| SciPy | 1.18.1 | | |
+| scikit-learn | 1.9.1 | | |
+| River | 0.27.0 | | |
+| PyYAML | 6.0.4 | | |
+| joblib | 1.6.0 | | |
+| psutil | 7.2.2 | | |
+| Matplotlib | 3.11.2 | | |
+| Plotly | 7.1.0 | | |
+
+## Verification results
+
+| Check | Observed result |
+| --- | --- |
+| `.venv/bin/python --version` | Python 3.12.14 |
+| `uv lock --check` | Lockfile matches the manifest |
+| `uv sync --locked --check` | No environment changes required |
+| `uv pip check --python .venv/bin/python` | All installed packages are compatible |
+| `.venv/bin/python -m pytest` | 11 environment smoke tests passed |
+| `.venv/bin/ruff check .` and `.venv/bin/ruff format --check .` | Both passed |
+| `git status --short --branch` | Branch `work` with the environment setup changes pending commit |
+
+The smoke tests check installation, imports, and YAML parsing. No model training or scientific experiment has been performed at this stage.
+
+## Cloud services and later stages
 
 | Item | Observed result |
 | --- | --- |
-| OS | Debian GNU/Linux 13.7 (trixie), Linux x86-64 |
-| Python | 3.12.14 |
-| pip | 26.2.2 in the base interpreter and 25.0.1 in the new project virtual environment |
-| Virtual environment | `python3 -m venv .venv` succeeded. The project interpreter and its bundled pip run directly from `.venv/bin/`. |
-| Git | 2.56.1 |
-| GitHub CLI | 2.46.0. `gh auth status --hostname github.com` and a read-only `gh api user` request succeeded with output suppressed. |
+| Runtime resources | Debian GNU/Linux 13.7 on x86-64. Three logical CPUs visible with a two-CPU quota, 8 GiB cgroup memory limit, and about 60 GiB of workspace disk available. |
 | Java | OpenJDK 21.0.13 |
-| Spark and PySpark | Neither `spark-submit` nor `pyspark` found on PATH. The inspected Python environment had no PySpark distribution. |
-| pytest | No executable or Python distribution found. |
-| Jupyter | No executable or Jupyter, Jupyter Core, JupyterLab, or Notebook distribution found. |
-| Kaggle | No CLI or Python distribution found. Checked for a legacy environment variable pair, a token binding, and credential files in standard locations. None was detected. |
-| CPU | AMD EPYC 9V74. Three logical CPUs visible, with a cgroup quota equivalent to two CPUs. |
-| RAM | 9.7 GiB visible, 9.2 GiB reported available at inspection, with an 8 GiB cgroup limit. |
-| Disk | 7.5 GiB available on the workspace filesystem at inspection. |
-| GPU | No GPU device or PCI display controller was visible to the task. GPU compute was unused. |
-
-## Repository and dependencies
-
-The project scaffold was initialized under `/workspace/adaptive-drift-aware-anomaly-mining`. The base environment had uv 0.13.9. The initial virtual environment was bootstrapped with the Python standard library.
-
-## Connectivity
-
-| Endpoint | Check | Result |
-| --- | --- | --- |
-| GitHub | Public HTTPS request | HTTP 200 |
-| Official Numenta NAB repository | GitHub API metadata request, repository page, and `git ls-remote … HEAD` | HTTP 200 for both HTTP requests. Git HEAD lookup succeeded. |
-| Kaggle | Unauthenticated GET to homepage and API documentation | HTTP 200 for both pages |
-| Kaggle competition list API | Unauthenticated GET | HTTP 401. The API is reachable and this request requires authentication. |
-
-Kaggle job submission, notebook network access, and artifact export remain unverified.
+| PySpark | Not yet installed. `spark-submit` and `pyspark` were absent from PATH. |
+| Official Numenta/NAB | `git ls-remote https://github.com/numenta/NAB.git HEAD` succeeded. Dataset acquisition is pending. |
+| GitHub | Read access to `origin` succeeded. The Cloud proxy denied access to `api.github.com`. Write access remains unverified. |
+| Kaggle | Not configured. The Cloud proxy denied access to `www.kaggle.com`, and the Kaggle CLI and Python package were absent. |
