@@ -28,6 +28,10 @@ The frozen full policy passed both paired synthetic criteria versus static Z-sco
 
 The research is univariate, with Gaussian synthetic regimes and Z-score adaptation. The NAB subset is small and lacks independent drift truth. The Spark adapter uses a local driver and a local SQLite journal. The measured capacity is an operating point for a finite CPU test. The dashboard pauses display while Spark continues processing. The manuscript is a complete IEEE-style draft. Venue-specific formatting and formal approval remain submission steps.
 
-## Remaining optional work
+## Student action still required
 
-Extend the research to multivariate and graph/network streams, richer drift truth and learned policies. Evaluate Kafka and multi-host state stores under a new engineering protocol. For submission, fill the institutional cover details and author affiliations, apply the applicable template, and obtain faculty approval.
+Fill cover and author metadata, review the final PDFs, prepare the slides from the outline, and add institutional forms if required. Apply the chosen venue’s template before paper submission. Review and merge the approved PR, then submit the required files. [Submission checklist](SUBMISSION_CHECKLIST.md)
+
+## Optional directions
+
+Multivariate and graph streams, richer drift truth, learned adaptation policies, Kafka, and multi-host state stores are future research or engineering extensions. The completed project does not depend on them.

@@ -10,6 +10,7 @@ subtitle: Final-year project report
 - **Student and registration number** — [Enter institutional details]
 - **Programme, department, and institution** — [Enter institutional details]
 - **Project supervisor** — [Enter supervisor name]
+- **Academic year** — [Enter official academic year]
 - **Submission date** — [Enter institutional submission date]
 
 The project implements a causal streaming anomaly detector and evaluates a frozen drift-triggered refit policy against shared static, periodic, and adaptive controls. The sealed evaluation ran at Git revision `7e72ccb61297d58567fb1e41c077e6b537e9d897`. [Evaluation receipt](../configs/final_evaluation.yaml)
