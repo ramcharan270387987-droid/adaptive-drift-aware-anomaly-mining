@@ -1,0 +1,19 @@
+[project]
+name = "drift-streaming"
+version = "0.1.0"
+description = "Local Spark Structured Streaming adapter for drift-anomaly"
+requires-python = ">=3.12,<3.13"
+dependencies = ["drift-anomaly", "psutil", "pyspark==4.1.1"]
+
+[tool.uv.sources]
+drift-anomaly = {path = "..", editable = true}
+
+[dependency-groups]
+dev = ["pytest", "ruff"]
+
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
