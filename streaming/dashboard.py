@@ -6,6 +6,7 @@ import signal
 import sqlite3
 import subprocess
 import sys
+from atexit import register, unregister
 from contextlib import closing
 from functools import lru_cache
 from pathlib import Path
@@ -19,8 +20,9 @@ from drift_streaming.state import METHODS
 
 from drift_anomaly import nab
 
-RUN_ROOT = Path("results/dashboard")
-EVIDENCE = Path("docs/evidence/delivery.json")
+ROOT = Path(__file__).resolve().parents[1]
+RUN_ROOT = ROOT / "results/dashboard"
+EVIDENCE = ROOT / "docs/evidence/delivery.json"
 LABELS = {
     "static_zscore": "Static Z-score",
     "persistence": "ADWIN + persistence",
@@ -64,16 +66,28 @@ def start_job(series, method, speed):
             stdout=log,
             stderr=subprocess.STDOUT,
             start_new_session=True,
+            cwd=ROOT,
             env={**os.environ, "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1"},
         )
-    return run, job
+
+    def stop():
+        if job.poll() is None:
+            try:
+                os.killpg(job.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                return
+
+    register(stop)
+    return run, job, stop
 
 
 def reset_job():
-    job = st.session_state.pop("job", None)
-    if job is not None and job.poll() is None:
-        os.killpg(job.pid, signal.SIGTERM)
+    stop = st.session_state.pop("stop_job", None)
+    if stop is not None:
+        stop()
+        unregister(stop)
     for key in (
+        "job",
         "run_dir",
         "selected_series",
         "selected_method",
@@ -109,20 +123,22 @@ def read_journal(run, stream_id, method):
 
 @lru_cache
 def synthetic_overlay(series):
-    source = replay_input(series, benchmark=True)
+    source = replay_input(
+        series, benchmark=True, synthetic_config_dir=ROOT / "configs/synthetic"
+    )
     return (
         [row.index for row in source.observations if row.anomaly_label],
         tuple((event.start, event.end) for event in source.drift_events),
     )
 
 
-def stream_plot(rows, series, reveal_truth):
+def stream_plot(rows, decisions, series, reveal_truth):
     figure = go.Figure()
     figure.add_scatter(
         x=[r["index"] for r in rows],
         y=[r["value"] for r in rows],
         mode="lines",
-        name="Observation",
+        name="Raw observations",
         line={"color": "#116d82", "width": 2},
     )
     for key, label, color, shape in (
@@ -138,6 +154,14 @@ def stream_plot(rows, series, reveal_truth):
             mode="markers",
             marker={"size": 10, "color": color, "symbol": shape},
         )
+    persistence = [d for d in decisions if d["classification"] == "DRIFT_CONFIRMED"]
+    figure.add_scatter(
+        x=[d["index"] for d in persistence],
+        y=[d["value"] for d in persistence],
+        name="Persistence passed",
+        mode="markers",
+        marker={"size": 11, "color": "#3156aa", "symbol": "square"},
+    )
     if reveal_truth and series in SYNTHETIC:
         positions, boundaries = synthetic_overlay(series)
         lookup = {r["index"]: r["value"] for r in rows}
@@ -174,52 +198,48 @@ def stream_plot(rows, series, reveal_truth):
 @st.fragment(run_every=0.5)
 def live_view(overview=False):
     run = st.session_state.get("run_dir")
-    if run is None:
-        st.info("Choose a development source and select Start replay.")
-        return
-    series = st.session_state["selected_series"]
-    method = st.session_state["selected_method"]
-    job = st.session_state.get("job")
-    code = job.poll() if job is not None else 0
-    status = (
-        "Streaming"
-        if code is None
-        else "Replay complete"
-        if code == 0
-        else "Replay failed"
-    )
-    st.subheader(status)
-    st.caption(f"{series} · {LABELS[method]}")
-    if code not in (0, None):
-        st.error(
-            "The streaming process stopped. Review the local job log, reset, and retry."
-        )
-    try:
-        if st.session_state.get("paused") and "last_view" in st.session_state:
-            rows = st.session_state["last_view"]
-        else:
-            rows = read_journal(run, series, method)
-            st.session_state["last_view"] = rows
-    except sqlite3.Error:
-        st.error("The committed prediction journal could not be read.")
-        return
+    rows = []
+    if run is not None:
+        series = st.session_state["selected_series"]
+        method = st.session_state["selected_method"]
+        code = st.session_state["job"].poll()
+        status = {None: "Streaming", 0: "Replay complete"}.get(code, "Replay failed")
+        st.subheader(status)
+        st.caption(f"{series} · {LABELS[method]}")
+        if code not in (0, None):
+            log = run / "job.log"
+            st.error(
+                f"The Spark replay stopped. Check Java 21 and review the job log at "
+                f"`{log.relative_to(ROOT)}`, then reset and retry."
+            )
+        try:
+            if st.session_state.get("paused") and "last_view" in st.session_state:
+                rows = st.session_state["last_view"]
+            else:
+                rows = read_journal(run, series, method)
+                st.session_state["last_view"] = rows
+        except sqlite3.Error:
+            st.error("The committed prediction journal could not be read.")
+            return
+    decisions = explain(rows)
+    version = decisions[-1]["model_version"] if decisions else None
     for column, label, value in zip(
-        st.columns(4),
-        ("Records", "Anomalies", "ADWIN alarms", "Refits"),
+        st.columns(5),
+        ("Records", "Anomalies", "ADWIN alarms", "Refits", "Model version"),
         (
             len(rows),
             sum(r["prediction"] is True for r in rows),
             sum(r["drift_alarm"] for r in rows),
             sum(r["adaptation_event"] for r in rows),
+            version if version is not None else "—",
         ),
         strict=True,
     ):
         column.metric(label, value)
-    if not rows:
+    if run is None:
+        st.info("Choose a development source and select Start replay.")
         return
-    decisions = explain(rows)
-    if overview:
-        st.write("Current model", decisions[-1]["current_model"] or "Warming up")
+    if not rows or overview:
         return
     st.toggle(
         "Pause display",
@@ -231,14 +251,18 @@ def live_view(overview=False):
         if series in SYNTHETIC
         else False
     )
-    st.plotly_chart(stream_plot(rows, series, truth), key="stream_plot")
+    st.plotly_chart(stream_plot(rows, decisions, series, truth), key="stream_plot")
     follow = st.toggle("Follow latest observation", value=True)
     position = (
         len(rows) - 1
         if follow
-        else st.slider("Observation index", 0, len(rows) - 1, key="selected_index")
-        if len(rows) > 1
-        else 0
+        else st.number_input(
+            "Observation index",
+            min_value=0,
+            max_value=len(rows) - 1,
+            step=1,
+            key="selected_index",
+        )
     )
     item = decisions[position]
     explanation, model = st.columns([3, 2])
@@ -246,12 +270,11 @@ def live_view(overview=False):
         st.subheader("Decision explanation")
         st.markdown(f"**{item['classification']}** · observation {item['index']}")
         st.write(item["reason"])
-        st.write(
-            f"Score {item['score']} · threshold {item['threshold']:.1f} · signed Z {item['z_score']}"
-        )
-        st.write(
-            f"ADWIN alarm {item['adwin_alarm']} · persistence {item['persistence']}"
-        )
+        if item["score"] is not None:
+            st.caption(
+                f"Score {item['score']:.3f} · threshold {item['threshold']:.1f} "
+                f"· signed Z {item['z_score']:.3f}"
+            )
         with st.expander("Candidate, refit and retrospective membership"):
             st.json(
                 {
@@ -268,19 +291,25 @@ def live_view(overview=False):
             )
     with model:
         st.subheader("Model state")
-        st.json(
-            {
-                "reference_at_score": {
-                    "mean": item["scoring_mean"],
-                    "std": item["scoring_std"],
-                },
-                "reference_after_observation": item["current_model"],
-                "version": item["model_version"],
-                "refits": item["model_version"],
-                "last_refit": item["last_refit_index"],
-                "cooldown_through": item["cooldown_through_index"],
-            },
-            expanded=True,
+        current = item["current_model"]
+        if current:
+            st.write(
+                f"**Scoring v{item['scoring_model_version']}** · mean "
+                f"{item['scoring_mean']:.4f} · std {item['scoring_std']:.4f}"
+            )
+            st.write(
+                f"**After observation v{item['model_version']}** · mean "
+                f"{current['mean']:.4f} · std {current['std']:.4f}"
+            )
+        else:
+            st.write("Fitting the warm-up reference.")
+        last_refit = item["last_refit_index"]
+        cooldown = item["cooldown_through_index"]
+        st.write(
+            f"Threshold {item['threshold']:.1f} · Last refit {last_refit if last_refit is not None else '—'}"
+        )
+        st.write(
+            f"Persistence {item['persistence']} · Cooldown through {cooldown if cooldown is not None else '—'}"
         )
 
 
@@ -370,12 +399,14 @@ def evidence_view(performance):
 
 
 def app():
-    st.set_page_config(page_title="Drift-aware anomaly mining", layout="wide")
-    st.title("Adaptive Drift-Aware Anomaly Mining")
+    st.set_page_config(
+        page_title="Drift-aware anomaly mining", page_icon="📈", layout="wide"
+    )
+    st.title("Adaptive Drift-Aware Explainable Streaming Anomaly Mining")
     page = st.sidebar.radio(
         "View", ("Overview", "Live replay", "Research results", "Spark performance")
     )
-    datasets = tuple(nab.load_config(Path("configs/nab.yaml"))["development"])
+    datasets = tuple(nab.load_config(ROOT / "configs/nab.yaml")["development"])
     with st.sidebar.form("replay"):
         selected = st.selectbox("Development source", (*SYNTHETIC, *datasets))
         method = st.selectbox(
@@ -393,13 +424,14 @@ def app():
         else:
             reset_job()
             try:
-                run, job = start_job(selected, method, speed)
+                run, job, stop = start_job(selected, method, speed)
             except OSError:
                 st.error("Unable to start the local Spark replay.")
             else:
                 st.session_state.update(
                     run_dir=run,
                     job=job,
+                    stop_job=stop,
                     selected_series=selected,
                     selected_method=method,
                 )

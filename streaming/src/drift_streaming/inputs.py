@@ -34,9 +34,11 @@ class ReplayInput:
         ]
 
 
-def replay_input(series, *, benchmark=False):
+def replay_input(
+    series, *, benchmark=False, synthetic_config_dir=Path("configs/synthetic")
+):
     if series in SYNTHETIC:
-        path = Path("configs/synthetic") / f"{series}_dev.yaml"
+        path = synthetic_config_dir / f"{series}_dev.yaml"
         config = load_config(path)
         validate_development_config(config)
         if benchmark:

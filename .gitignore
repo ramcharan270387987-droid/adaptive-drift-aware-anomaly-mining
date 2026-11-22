@@ -38,3 +38,6 @@ id_dsa
 /data/cache/
 /data/generated/
 /results/
+
+# Generated faculty demo and snapshot archives
+/dist/

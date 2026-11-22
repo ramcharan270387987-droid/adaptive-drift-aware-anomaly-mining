@@ -36,8 +36,7 @@ streaming/.venv/bin/python -m drift_streaming.live --series nab \
   --methods full --rate 512 --output results/live_nab
 streaming/.venv/bin/python -m drift_streaming.live --matrix \
   --output results/spark_sustained_reproduction
-streaming/.venv/bin/python -m streamlit run streaming/dashboard.py \
-  --server.address 127.0.0.1
+./scripts/run_dashboard.sh
 ```
 
 Dashboard instructions are in the [demo checklist](DEMO.md). Spark benchmark numbers depend on the host and run order. Detector output equivalence is exact on the verified development fixtures.

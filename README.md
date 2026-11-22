@@ -21,7 +21,7 @@ export UV_CACHE_DIR="$PWD/.cache/uv"
 uv sync --locked --python 3.12
 uv sync --project streaming --locked --python 3.12
 export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
-streaming/.venv/bin/python -m streamlit run streaming/dashboard.py --server.address 127.0.0.1
+./scripts/run_dashboard.sh
 ```
 
 Choose **Live replay**, **sudden**, and **Full selective policy**. The [demo checklist](docs/DEMO.md) shows how to inspect an anomaly, alarm and refit, then replay a development NAB file.

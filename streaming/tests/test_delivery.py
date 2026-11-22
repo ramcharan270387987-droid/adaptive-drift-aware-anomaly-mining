@@ -15,7 +15,7 @@ from drift_streaming.state import BatchSink
 from pyspark.errors import StreamingQueryException
 from streamlit.testing.v1 import AppTest
 
-DASHBOARD = Path("streaming/dashboard.py")
+DASHBOARD = Path(__file__).resolve().parents[1] / "dashboard.py"
 METHOD = ("full",)
 
 
@@ -121,7 +121,9 @@ def test_explanations_preserve_model_order_and_use_no_truth(tmp_path):
 
 
 @pytest.mark.parametrize("source", ["sudden", BENCHMARK_NAB])
-def test_dashboard_streamlit_runtime_end_to_end(source):
+def test_dashboard_streamlit_runtime_end_to_end(source, monkeypatch):
+    if source == "sudden":
+        monkeypatch.chdir(DASHBOARD.parent)
     app = AppTest.from_file(DASHBOARD, default_timeout=20).run()
     assert not app.exception and len(app.info) == 1
     app.sidebar.radio[0].set_value("Live replay").run()
@@ -138,12 +140,9 @@ def test_dashboard_streamlit_runtime_end_to_end(source):
         assert len(app.get("plotly_chart")) == 1
         assert any("Decision explanation" in item.value for item in app.subheader)
         if source == "sudden":
-            assert [m.value for m in app.metric[1:]] == ["110", "1", "1"] or (
-                int(app.metric[1].value) > 0
-                and [m.value for m in app.metric[2:]] == ["1", "1"]
-            )
+            assert [m.value for m in app.metric[1:]] == ["28", "1", "1", "1"]
             app.toggle[1].set_value(False).run()
-            app.slider[0].set_value(543).run()
+            app.number_input[0].set_value(543).run()
             assert any("MODEL_ADAPTED" in item.value for item in app.markdown)
             app.checkbox[0].check().run()
             assert "Synthetic truth" in app.get("plotly_chart")[0].proto.spec

@@ -64,11 +64,6 @@ The synthetic paired event-window FPR difference was −2.005 percentage points 
 
 The sealed evaluation supports selective adaptation on controlled synthetic streams versus static Z-score. It shows a real-benchmark false-positive trade-off and a substantially lower synthetic refit count than fixed scheduling. The Spark measurements are finite, local CPU trials at different trigger intervals. They leave long-run capacity and distributed scalability unmeasured.
 
+## Opening the offline presentation
 
-## Opening the saved HTML on a managed machine
-
-Some managed browsers block `file://` navigation. Serve just the release directory over loopback and open `http://127.0.0.1:8782/Offline_Faculty_Demo.html`. This starts only Python’s static file server.
-
-```bash
-python3 -m http.server 8782 --bind 127.0.0.1 --directory results/release-candidate
-```
+Double-click `adaptive_drift_demo.html` in the extracted faculty ZIP to open the browser presentation. It contains all illustrations and result tables. The `figures/`, `screenshots/` and `tables/` folders are also included for use in slides.
