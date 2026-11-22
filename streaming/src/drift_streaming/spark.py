@@ -9,6 +9,7 @@ from pathlib import Path
 from time import perf_counter
 
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import get_json_object
 
 from drift_anomaly.experiments.validation import execution_revision
 from drift_streaming.state import MAX_BATCH_ROWS, METHODS, BatchSink
@@ -41,7 +42,15 @@ def local_session():
 
 
 def drain(
-    session, source: Path, work: Path, methods, *, after_commit: Callable | None = None
+    session,
+    source: Path,
+    work: Path,
+    methods,
+    *,
+    after_commit: Callable | None = None,
+    live_producer=None,
+    interval=0.5,
+    partitions=1,
 ):
     """Drain available files, reusing the same Spark and SQLite state on restart."""
     if not source.is_dir():
@@ -78,6 +87,10 @@ def drain(
 
         def on_batch(frame, batch_id):
             begin = perf_counter()
+            if partitions > 1:
+                frame = frame.repartition(
+                    partitions, get_json_object("value", "$.stream_id")
+                )
             lines = [row.value for row in frame.limit(MAX_BATCH_ROWS + 1).collect()]
             if len(lines) > MAX_BATCH_ROWS:
                 raise ValueError(f"Spark micro-batch exceeds {MAX_BATCH_ROWS} rows")
@@ -90,24 +103,38 @@ def drain(
                     "committed": committed,
                     "processing_seconds": end - begin,
                     "available_to_commit_seconds": end - started,
+                    "commit_monotonic": end,
                 }
             )
             if after_commit is not None:
                 after_commit(batch_id)
 
-        query = (
+        writer = (
             session.readStream.format("text")
             .option("maxFilesPerTrigger", 1)
             .option("latestFirst", "false")
             .load(str(source.resolve()))
             .writeStream.foreachBatch(on_batch)
             .option("checkpointLocation", str(checkpoint.resolve()))
-            .trigger(availableNow=True)
-            .start()
         )
+        query = (
+            writer.trigger(availableNow=True)
+            if live_producer is None
+            else writer.trigger(processingTime=f"{round(interval * 1000)} milliseconds")
+        ).start()
         try:
-            query.awaitTermination()
+            if live_producer is None:
+                query.awaitTermination()
+            else:
+                live_producer.start()
+                while live_producer.is_alive():
+                    if query.awaitTermination(timeout=0.2):
+                        raise RuntimeError("Spark stopped before the producer finished")
+                live_producer.result()
+                query.processAllAvailable()
         finally:
+            if live_producer is not None:
+                live_producer.close()
             if query.isActive:
                 query.stop()
         return sink, timings, perf_counter() - started
