@@ -55,7 +55,7 @@ The study uses univariate simulations, Z-score adaptation and a small NAB subset
 
 ## Faculty materials
 
-[Dashboard launch and demo script](docs/DEMO.md) · [Presentation outline](docs/academic/PRESENTATION.md) · [Viva preparation](docs/academic/VIVA.md) · [Figures](docs/academic/FIGURES.md) · [Publication tables](docs/academic/TABLES.md) · [Verified references](docs/academic/REFERENCES.md)
+[16-slide presentation](docs/faculty_presentation/slide_outline.md) · [Speaker notes](docs/faculty_presentation/speaker_notes.md) · [Live demo](docs/faculty_presentation/demo_script.md) · [Offline fallback](docs/faculty_presentation/offline_demo_script.md) · [Viva preparation](docs/faculty_presentation/viva_questions.md) · [Faculty summary](docs/faculty_presentation/faculty_summary.md) · [Visual assets](docs/faculty_presentation/presentation_assets.md)
 
 ## Release candidate
 

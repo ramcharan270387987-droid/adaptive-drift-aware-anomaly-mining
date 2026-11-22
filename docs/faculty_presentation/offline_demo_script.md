@@ -1,0 +1,18 @@
+# Offline faculty fallback — 6 minutes 30 seconds
+
+Before presenting, save `adaptive_drift_demo.html` locally and open it from the laptop's file manager. It can be copied from a previous export or extracted from `faculty_demo.zip`. Test it on the actual presentation browser with internet access turned off. Viewing requires no server, Spark, Streamlit, or Python. This walkthrough presents recorded evidence.
+
+To regenerate the existing HTML and ZIP ahead of time, use the export command in the [dashboard guide](../DEMO.md#c-standalone-offline-demo). If a managed browser blocks opening local HTML, place the linked PNGs in the slide deck in the same order, including the result and benchmark figures.
+
+| Time | Section or saved visual | Say this |
+| --- | --- | --- |
+| 0:00–0:35 | **Overview**. Show the [architecture figure](../academic/figures/01_architecture.png). | “This saved evidence shows the same development replay as the dashboard. Spark processed the records in order, and the journal preserves the prediction and model state. The final results come from the separate sealed evaluation.” |
+| 0:35–1:25 | **Sudden drift**. Show the [synthetic screenshot](../academic/figures/demo_synthetic.png) and open **256 · Anomaly prediction**. | “The left portion is the original normal regime. Observation 256 has an absolute Z-score of 6.905 against a threshold of 3.0. The planted regime change is at 320. The synthetic overlay supplies evaluation context.” |
+| 1:25–2:05 | Show the [decision timeline](../academic/figures/05_alarm_persistence_refit.png). Open **351 · ADWIN alarm**. | “At 351, ADWIN opens a candidate, even though the individual point is below the anomaly threshold. The scoring version is still zero.” |
+| 2:05–2:55 | Open **479 · Persistence confirmed**. | “Two median blocks agree on a sustained shift. Only 121 observations remain after filtering, so the policy waits for another checkpoint.” |
+| 2:55–3:45 | Open **543 · Model refit** and **544 · Updated reference**. Compare the scoring versions and mean/std in the disclosures. | “The original reference still scores 543. After that score, 180 retained values support a refit. At 544 the scoring version is one. The mean moved from 0.0582 to 1.3163 and the standard deviation from 0.9695 to 0.8479. The cooldown is active.” |
+| 3:45–4:35 | **NAB replay**. Show the [NAB screenshot](../academic/figures/demo_nab.png). | “This is a recorded 896-observation development prefix of CloudWatch CPU. NAB has anomaly annotations, and independent drift ground truth is unavailable.” |
+| 4:35–5:35 | **Final results**. Show the synthetic and NAB tables, then the [machine-temperature failure figure](../academic/figures/11_nab_failure.png). The [research results screenshot](../academic/figures/demo_research.png) is an optional transition. | “The full policy passes both synthetic criteria versus static Z-score. On final NAB, it gains one exact detection but adds 11,288 point false positives. In the displayed failure case, the secondary persistence policy retains the window hit and adds 115 point false positives within that window.” |
+| 5:35–6:30 | **Spark benchmark**, then **Limitations**. Show the [benchmark figure](../academic/figures/10_spark.png). | “The highest measured committed rate was 3,886 rows per second on one host. The heavier workload had more backlog. This is a local benchmark under finite loads. The research question is partially supported, with the strongest evidence on controlled synthetic streams.” |
+
+The saved [event extract](../academic/demo_events.csv) gives the exact values for 256, 351, 479, 543, and 544 if the projector makes the figure hard to read. [Asset index and captions](presentation_assets.md)
