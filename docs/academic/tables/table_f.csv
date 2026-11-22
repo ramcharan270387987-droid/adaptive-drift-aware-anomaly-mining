@@ -1,0 +1,7 @@
+Policy,Refits,Refit-input uses,Matched refits,Unmatched refits,Median delay
+Static Z-score,0,0,0,0,—
+Fixed schedule,15000,3840000,1280,13720,255.0
+Immediate ADWIN,1534,392704,1280,254,63.0
+ADWIN + persistence,1430,187584,1280,150,191.0
+Full selective policy,1326,225242,1280,46,287.0
+Persistence + filtering,1482,253001,1280,202,287.0

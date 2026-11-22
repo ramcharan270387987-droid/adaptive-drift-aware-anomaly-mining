@@ -10,7 +10,7 @@ The repository is functionally complete for the specified faculty demonstration 
 - Aligned development, non-aligned robustness, NAB development and the sealed untouched primary synthetic and final NAB studies.
 - Spark file replay, sustained arrival simulation, keyed partitioning, per-stream state, and checkpoint recovery.
 - Explainable event and model-state views, synthetic evaluation overlays, sealed research tables and measured Spark benchmarks in Streamlit.
-- Portable result summaries, final artifact packaging, architecture, faculty demo checklist, project report and IEEE-style manuscript scaffold.
+- Portable result summaries, final artifact packaging, architecture, faculty demo, 30-section project report, complete IEEE-style draft with verified literature, publication figures and tables, presentation outline and viva guide.
 
 ## Verified
 
@@ -26,8 +26,8 @@ The frozen full policy passed both paired synthetic criteria versus static Z-sco
 
 ## Known limitations
 
-The research is univariate, with Gaussian synthetic regimes and Z-score adaptation. The NAB subset is small and lacks independent drift truth. The Spark adapter uses a local driver and a local SQLite journal. The measured capacity is an operating point for a finite CPU test. The dashboard pauses display while Spark continues processing. The manuscript is a scaffold with a clearly marked literature-review placeholder.
+The research is univariate, with Gaussian synthetic regimes and Z-score adaptation. The NAB subset is small and lacks independent drift truth. The Spark adapter uses a local driver and a local SQLite journal. The measured capacity is an operating point for a finite CPU test. The dashboard pauses display while Spark continues processing. The manuscript is a complete IEEE-style draft. Venue-specific formatting and formal approval remain submission steps.
 
 ## Remaining optional work
 
-Extend the research to multivariate and graph/network streams, richer drift truth and learned policies. Evaluate Kafka and multi-host state stores under a new engineering protocol. For journal submission, verify and complete the literature review, apply the venue template, and obtain faculty approval.
+Extend the research to multivariate and graph/network streams, richer drift truth and learned policies. Evaluate Kafka and multi-host state stores under a new engineering protocol. For submission, fill the institutional cover details and author affiliations, apply the applicable template, and obtain faculty approval.

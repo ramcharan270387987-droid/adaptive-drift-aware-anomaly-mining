@@ -10,7 +10,7 @@ A reproducible research project and local demonstration of causal anomaly scorin
 - On final NAB, the same policy detected 8/13 exact points versus 7/13 for static Z-score, while raising point false positives from 8,190 to 19,478. NAB does not have independent drift labels.
 - The full policy and the secondary persistence policy used about 91% fewer synthetic refits than fixed scheduling. The engineering implementation reproduced reference replay across four Spark batch sizes and after checkpoint recovery.
 
-[Sealed final report](docs/final_evaluation.md) · [Project report](docs/PROJECT_REPORT.md) · [Status](docs/STATUS.md)
+[Academic delivery index](docs/academic/README.md) · [Sealed final report](docs/final_evaluation.md) · [Project report](docs/PROJECT_REPORT.md) · [Status](docs/STATUS.md)
 
 ## Quick start
 
@@ -49,6 +49,10 @@ Synthetic data are generated locally. The [reproducibility workflow](docs/REPROD
 | `docs/` | Protocol, architecture, reports, demo checklist and portable results |
 | `results/`, `data/raw/` | Ignored local run artifacts and cached source data |
 
-The streaming path is source → Spark micro-batch → ordered per-stream detector state → SQLite prediction journal → explanation layer and dashboard. The research path evaluates the same detectors offline against frozen data splits. [Architecture](docs/ARCHITECTURE.md) · [Spark guide](docs/spark_streaming.md) · [Sustained benchmark](docs/SUSTAINED_STREAMING.md) · [IEEE manuscript scaffold](docs/IEEE_MANUSCRIPT.md)
+The streaming path is source → Spark micro-batch → ordered per-stream detector state → SQLite prediction journal → explanation layer and dashboard. The research path evaluates the same detectors offline against frozen data splits. [Architecture](docs/ARCHITECTURE.md) · [Spark guide](docs/spark_streaming.md) · [Sustained benchmark](docs/SUSTAINED_STREAMING.md) · [IEEE manuscript draft](docs/IEEE_MANUSCRIPT.md)
 
 The study uses univariate simulations, Z-score adaptation and a small NAB subset. The Spark measurements cover one local host and do not establish multi-host scalability. Kafka and cluster deployment remain future work.
+
+## Faculty materials
+
+[Dashboard launch and demo script](docs/DEMO.md) · [Presentation outline](docs/academic/PRESENTATION.md) · [Viva preparation](docs/academic/VIVA.md) · [Figures](docs/academic/FIGURES.md) · [Publication tables](docs/academic/TABLES.md) · [Verified references](docs/academic/REFERENCES.md)
